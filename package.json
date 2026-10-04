@@ -1,0 +1,12 @@
+{
+  "name": "be-dua-xe",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bé Đua Xe — mini game đua xe F1 cho bé. File này dành cho trường hợp repo chứa cả thư mục car-racing-game.",
+  "scripts": {
+    "start": "node car-racing-game/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
