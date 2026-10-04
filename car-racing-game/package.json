@@ -1,0 +1,12 @@
+{
+  "name": "be-dua-xe",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bé Đua Xe — mini game đua xe F1 cho bé (HTML5 Canvas). Server Node tối giản để chạy trên Render Web Service.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

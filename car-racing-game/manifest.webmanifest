@@ -1,0 +1,18 @@
+{
+  "name": "Bé Đua Xe — Né Chướng Ngại Vật",
+  "short_name": "Bé Đua Xe",
+  "description": "Mini game đua xe F1 cho bé: né chướng ngại vật, thu xu, phóng tên lửa và tham gia giải đấu.",
+  "lang": "vi",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#8fd3ff",
+  "theme_color": "#2f9bff",
+  "categories": ["games", "kids", "entertainment"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

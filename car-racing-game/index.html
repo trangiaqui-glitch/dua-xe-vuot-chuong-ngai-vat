@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Bé Đua Xe — Né Chướng Ngại Vật</title>
+  <meta name="description" content="Mini game đua xe F1 cho bé: né chướng ngại vật, thu xu, phóng tên lửa, chọn xe và tham gia giải đấu. Chơi miễn phí ngay trên trình duyệt.">
+  <meta name="theme-color" content="#2f9bff">
+  <meta name="color-scheme" content="light">
+
+  <!-- Chia sẻ lên mạng xã hội. Sau khi deploy, thêm og:url và og:image (đường dẫn đầy đủ tới icons/icon-512.png) -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="vi_VN">
+  <meta property="og:title" content="Bé Đua Xe — Né Chướng Ngại Vật">
+  <meta property="og:description" content="Đua xe F1, né chướng ngại vật, thu xu và giành cúp cùng các bạn!">
+  <meta name="twitter:card" content="summary">
+
+  <!-- Cài như ứng dụng (PWA) -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/favicon-64.png" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Bé Đua Xe">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <noscript><p style="text-align:center;padding:24px;font-family:Arial,sans-serif">Game cần bật JavaScript để chơi nhé!</p></noscript>
+  <main class="app">
+    <div class="stage" id="stage">
+      <canvas id="game" aria-label="Màn chơi đua xe" role="img"></canvas>
+
+      <!-- HUD khi đang chơi -->
+      <div class="hud" id="hud" hidden>
+        <div class="hud-row">
+          <div class="stat"><span class="stat-label">⭐ ĐIỂM</span><b id="hud-score">0</b></div>
+          <div class="stat"><span class="stat-label">🪙 XU</span><b id="hud-coins">0</b></div>
+          <div class="stat"><span class="stat-label">🏆 KỶ LỤC</span><b id="hud-best">0</b></div>
+          <button class="icon-btn" id="btn-sound-hud" aria-label="Bật hoặc tắt âm thanh">🔊</button>
+          <button class="icon-btn" id="btn-pause" aria-label="Tạm dừng">⏸</button>
+        </div>
+        <div class="level-badge" id="hud-level">LEVEL 1</div>
+        <div class="power-row" id="hud-powers" aria-live="polite"></div>
+        <div class="combo" id="hud-combo" hidden></div>
+        <div class="race-track" id="race-track" hidden aria-hidden="true"><span class="rt-flag">🏁</span><span class="rt-line"></span></div>
+        <div class="speedo" id="hud-speed" aria-label="Số tốc độ">🚀 ▮▮▮▯▯</div>
+        <div class="turbo" id="hud-turbo" aria-label="Thanh Turbo">
+          <span class="turbo-label" id="turbo-label">⚡ TURBO</span>
+          <div class="turbo-track"><div class="turbo-fill" id="turbo-fill"></div></div>
+        </div>
+      </div>
+
+      <!-- Màn hình bắt đầu -->
+      <section class="screen" id="screen-start">
+        <div class="card">
+          <div class="big-emoji">🏎️</div>
+          <h1>BÉ ĐUA XE</h1>
+          <p class="sub">Né chướng ngại vật<br>và thu thập thật nhiều xu!</p>
+          <button class="btn btn-green btn-xl" id="btn-play">▶ CHƠI</button>
+          <button class="btn btn-red btn-lg" id="btn-tournament">🏁 GIẢI ĐẤU</button>
+          <div class="btn-row">
+            <button class="btn btn-orange" id="btn-garage">🚗 CHỌN XE</button>
+            <button class="btn btn-gray" id="btn-settings">⚙️ CÀI ĐẶT</button>
+          </div>
+          <button class="btn btn-blue" id="btn-board-start">🏆 BẢNG THÀNH TÍCH</button>
+          <p class="hint">Đổi làn: ← → hoặc A D · Tăng/giảm tốc: ↑ ↓ hoặc W S<br>Turbo: Cách (Space) · Tên lửa 🚀: F · Tạm dừng: Esc</p>
+        </div>
+      </section>
+
+      <!-- Tạm dừng -->
+      <section class="screen" id="screen-pause" hidden>
+        <div class="card">
+          <h2>⏸ TẠM DỪNG</h2>
+          <button class="btn btn-green btn-xl" id="btn-resume">▶ TIẾP TỤC</button>
+          <button class="btn btn-orange" id="btn-restart-pause">🔄 CHƠI LẠI</button>
+          <button class="btn btn-gray" id="btn-home-pause">🏠 TRANG CHỦ</button>
+        </div>
+      </section>
+
+      <!-- Lên level -->
+      <section class="screen" id="screen-levelup" hidden>
+        <div class="card">
+          <div class="big-emoji">🎉</div>
+          <h2>LEVEL UP!</h2>
+          <div class="level-big" id="levelup-num">LEVEL 2</div>
+          <p class="sub" id="levelup-note">Sẵn sàng chưa?</p>
+          <button class="btn btn-green btn-xl" id="btn-continue">▶ TIẾP TỤC</button>
+        </div>
+      </section>
+
+      <!-- Game over -->
+      <section class="screen" id="screen-over" hidden>
+        <div class="card">
+          <h2>💥 ÔI KHÔNG!</h2>
+          <p class="over-title">GAME OVER</p>
+          <p class="result">Điểm: <b id="over-score">0</b> · Kỷ lục: <b id="over-best">0</b></p>
+          <p class="record" id="over-record" hidden>🎉 KỶ LỤC MỚI!</p>
+          <form class="save-form" id="save-form" autocomplete="off">
+            <label for="nickname">Tên của bé (2–15 ký tự)</label>
+            <div class="save-row">
+              <input id="nickname" name="nickname" type="text" maxlength="15" placeholder="Bé An" inputmode="text" enterkeyhint="done">
+              <button class="btn btn-blue" type="submit" id="btn-save">💾 LƯU</button>
+            </div>
+            <p class="msg" id="save-msg" role="status" aria-live="polite"></p>
+          </form>
+          <button class="btn btn-green btn-xl" id="btn-again">🔄 CHƠI LẠI</button>
+          <div class="btn-row">
+            <button class="btn btn-blue" id="btn-board-over">🏆 THÀNH TÍCH</button>
+            <button class="btn btn-gray" id="btn-home-over">🏠 TRANG CHỦ</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bảng thành tích -->
+      <section class="screen" id="screen-board" hidden>
+        <div class="card card-board">
+          <h2>🏆 BẢNG THÀNH TÍCH</h2>
+          <p class="source-tag" id="board-source"></p>
+          <p class="you" id="board-you" hidden></p>
+          <div class="board-body" id="board-body" aria-live="polite"></div>
+          <button class="btn btn-green" id="btn-board-back">← QUAY LẠI</button>
+        </div>
+      </section>
+
+      <!-- Giải đấu: giới thiệu chặng / kết quả chặng / kết quả chung -->
+      <section class="screen" id="screen-race" hidden>
+        <div class="card">
+          <div class="big-emoji" id="race-emoji">🏁</div>
+          <h2 id="race-title">GIẢI ĐẤU</h2>
+          <p class="sub" id="race-sub"></p>
+          <div class="board-body" id="race-list" aria-live="polite"></div>
+          <button class="btn btn-green btn-lg" id="btn-race-main">▶ XUẤT PHÁT</button>
+          <button class="btn btn-gray" id="btn-race-home">🏠 TRANG CHỦ</button>
+        </div>
+      </section>
+
+      <!-- Chọn xe -->
+      <section class="screen" id="screen-garage" hidden>
+        <div class="card">
+          <h2>🚗 CHỌN XE CỦA BÉ</h2>
+          <div class="car-grid" id="car-grid"></div>
+          <p class="sub" id="garage-current"></p>
+          <div class="photo-row">
+            <img id="photo-thumb" class="photo-thumb" alt="Ảnh của bé" hidden>
+            <label class="btn btn-blue photo-btn" for="photo-input">📷 GẮN ẢNH CỦA BÉ</label>
+            <input id="photo-input" type="file" accept="image/*" class="sr-only">
+            <button class="btn btn-gray photo-clear" id="btn-photo-clear" type="button" aria-label="Bỏ ảnh khỏi xe" hidden>🗑️</button>
+          </div>
+          <p class="msg" id="photo-msg" role="status" aria-live="polite"></p>
+          <p class="hint">Ảnh chỉ lưu trên máy này, không gửi đi đâu cả.</p>
+          <button class="btn btn-green btn-xl" id="btn-garage-back">✔ XONG</button>
+        </div>
+      </section>
+
+      <!-- Cài đặt -->
+      <section class="screen" id="screen-settings" hidden>
+        <div class="card">
+          <h2>⚙️ CÀI ĐẶT</h2>
+          <button class="btn btn-blue btn-xl" id="btn-sound-setting">🔊 ÂM THANH: BẬT</button>
+          <p class="hint" id="online-status"></p>
+          <button class="btn btn-orange" id="btn-reset-data">🗑️ XOÁ ĐIỂM TRÊN MÁY</button>
+          <button class="btn btn-green" id="btn-settings-back">← QUAY LẠI</button>
+        </div>
+      </section>
+
+      <div class="banner" id="banner" hidden>⚡ TURBO SẴN SÀNG! (Space)</div>
+    </div>
+
+    <!-- Nút điều khiển cho điện thoại / máy tính bảng -->
+    <div class="controls" id="controls">
+      <button class="ctl ctl-speed down" id="btn-slower" aria-label="Giảm tốc độ"><span class="ico">🐢</span><small>CHẬM</small></button>
+      <button class="ctl ctl-turbo" id="btn-turbo" aria-label="Kích hoạt Turbo" disabled><span class="ico">⚡</span><small>TURBO</small></button>
+      <button class="ctl ctl-fire" id="btn-fire" aria-label="Phóng tên lửa" disabled><span class="ico">🚀</span><small id="fire-count">×2</small></button>
+      <button class="ctl ctl-speed up" id="btn-faster" aria-label="Tăng tốc độ"><span class="ico">🐇</span><small>NHANH</small></button>
+      <button class="ctl ctl-move" id="btn-left" aria-label="Sang trái"><span class="ico">◀</span><small>TRÁI</small></button>
+      <button class="ctl ctl-move" id="btn-right" aria-label="Sang phải"><small>PHẢI</small><span class="ico">▶</span></button>
+    </div>
+  </main>
+
+  <!-- config.js phải nằm trước script.js -->
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
