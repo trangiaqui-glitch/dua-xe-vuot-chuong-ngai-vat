@@ -2,6 +2,8 @@
 
 Mini game HTML5 cho bé 4–10 tuổi. Chỉ dùng HTML + CSS + JavaScript thuần, vẽ bằng Canvas — **không cần cài đặt, không cần file hình/âm thanh**.
 
+**🎮 Chơi online:** https://trangiaqui-glitch.github.io/dua-xe-vuot-chuong-ngai-vat/ (GitHub Pages, đã bật bảng thành tích Supabase)
+
 ## Chạy game
 
 Mở file `index.html` bằng Chrome, Edge hoặc Firefox là chơi được ngay (chế độ offline).
