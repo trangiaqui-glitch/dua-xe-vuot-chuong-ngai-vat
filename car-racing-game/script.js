@@ -238,7 +238,7 @@ const Online = {
   async init() {
     if (!this.configured()) return;
     try {
-      if (!window.supabase) await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
+      if (!window.supabase) await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4');
       if (window.supabase && window.supabase.createClient) {
         this.client = window.supabase.createClient(SUPABASE_URL.trim(), SUPABASE_ANON_KEY.trim());
       }

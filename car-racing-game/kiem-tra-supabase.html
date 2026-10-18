@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Kiểm tra Supabase</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f4f6fb; color: #1d2333; margin: 0; padding: 24px 16px; }
+    main { max-width: 640px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+    h1 { font-size: 1.4rem; margin-top: 0; }
+    ol { padding-left: 0; list-style: none; }
+    li { padding: 10px 12px; margin: 8px 0; border-radius: 8px; background: #f0f2f7; }
+    li.ok { background: #e3f7e8; } li.fail { background: #fde7e7; } li.warn { background: #fff4d6; }
+    small { display: block; color: #555; margin-top: 4px; white-space: pre-wrap; }
+    button { font-size: 1rem; padding: 10px 18px; border: 0; border-radius: 8px; background: #2f6fed; color: #fff; cursor: pointer; }
+    a { color: #2f6fed; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>🔌 Kiểm tra kết nối Supabase</h1>
+  <p>Trang này chỉ <b>đọc</b> bảng <code>leaderboard</code>, không ghi dữ liệu. Nên mở bằng Live Server, không mở trực tiếp bằng <code>file://</code>.</p>
+  <button id="run">Kiểm tra lại</button>
+  <ol id="steps"></ol>
+  <p><a href="index.html">← Về game</a></p>
+</main>
+
+<script src="config.js"></script>
+<script>
+const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4';
+const steps = document.getElementById('steps');
+
+function step(status, title, detail) {
+  const li = document.createElement('li');
+  li.className = status;
+  li.textContent = { ok: '✅ ', fail: '❌ ', warn: '⚠️ ' }[status] + title;
+  if (detail) { const s = document.createElement('small'); s.textContent = detail; li.appendChild(s); }
+  steps.appendChild(li);
+  return status !== 'fail';
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = () => reject(new Error('Không tải được ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+async function run() {
+  steps.innerHTML = '';
+
+  // 1. config.js
+  if (typeof SUPABASE_URL !== 'string' || typeof SUPABASE_ANON_KEY !== 'string')
+    return step('fail', 'Không đọc được config.js', 'Kiểm tra file config.js có nằm cùng thư mục với trang này.');
+  if (SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_'))
+    return step('fail', 'config.js vẫn là giá trị mẫu', 'Điền Project URL và anon key lấy từ Supabase > Project Settings > API.');
+  const url = SUPABASE_URL.trim(), key = SUPABASE_ANON_KEY.trim();
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.(co|in)\/?$/i.test(url))
+    return step('fail', 'SUPABASE_URL sai định dạng', 'Phải có dạng https://xxxxx.supabase.co (không thêm /rest/v1).\nHiện tại: ' + url);
+
+  // 2. Key: chặn service_role
+  let role = null;
+  try { role = JSON.parse(atob(key.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).role; } catch (_) {}
+  if (role === 'service_role')
+    return step('fail', 'Bạn đang dùng service_role key!', 'Key này có toàn quyền, KHÔNG được để ở frontend. Thay bằng anon public key và đổi (rotate) service_role key trong Supabase.');
+  if (role === 'anon') step('ok', 'config.js hợp lệ (anon key)', url);
+  else step('warn', 'config.js đã điền, nhưng không nhận ra loại key', 'Nếu đây là "publishable key" mới (sb_publishable_...) thì vẫn dùng được. KHÔNG dùng "secret key" (sb_secret_...).');
+
+  // 3. Thư viện
+  try {
+    if (!window.supabase) await loadScript(SUPABASE_JS);
+    step('ok', 'Đã tải thư viện supabase-js');
+  } catch (e) {
+    return step('fail', 'Không tải được thư viện supabase-js', 'Kiểm tra mạng Internet hoặc trình chặn quảng cáo.');
+  }
+
+  // 4. Đọc bảng
+  const client = window.supabase.createClient(url, key);
+  try {
+    const { data, error, count } = await client.from('leaderboard')
+      .select('nickname, score, level', { count: 'exact' })
+      .order('score', { ascending: false }).limit(3);
+    if (error) throw error;
+    step('ok', `Đọc được bảng leaderboard (${count ?? data.length} bản ghi)`,
+      data.length ? 'Top: ' + data.map((r) => `${r.nickname} — ${r.score}`).join(', ') : 'Bảng còn trống — chơi 1 ván rồi gửi điểm để thử ghi.');
+  } catch (e) {
+    const msg = (e && (e.message || e.code)) || String(e);
+    let hint = '';
+    if (/relation .* does not exist|42P01|PGRST205|Could not find the table/i.test(msg))
+      hint = '\n→ Chưa có bảng. Vào Supabase > SQL Editor, chạy toàn bộ file supabase-schema.sql.';
+    else if (/Invalid API key|JWT|401/i.test(msg))
+      hint = '\n→ Key không đúng với project này. Copy lại anon key.';
+    else if (/Failed to fetch|NetworkError/i.test(msg))
+      hint = '\n→ Không gọi được tới Supabase: sai URL, mất mạng, hoặc project đang bị tạm dừng (paused).';
+    return step('fail', 'Không đọc được bảng leaderboard', msg + hint);
+  }
+
+  step('ok', 'Kết nối thành công! Game sẽ tự chạy chế độ ONLINE.');
+}
+
+document.getElementById('run').addEventListener('click', run);
+run();
+</script>
+</body>
+</html>

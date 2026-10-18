@@ -108,6 +108,7 @@ car-racing-game/
 ├── script.js            Toàn bộ logic game (chia khối rõ ràng, có comment)
 ├── config.js            Cấu hình Supabase (tuỳ chọn)
 ├── supabase-schema.sql  Bảng + RLS cho leaderboard
+├── kiem-tra-supabase.html  Trang kiểm tra kết nối Supabase (chỉ đọc)
 └── README.md
 ```
 
